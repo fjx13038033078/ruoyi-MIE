@@ -1,5 +1,9 @@
 
-# SMS（Student Management System的缩写）
+# Demo
+
+## 说明
+
+1.  本套代码仅作为若依最简功能基础版本代码，没有任何实际业务功能。
 
 ## 内置功能
 
