@@ -1,5 +1,5 @@
 
-# Demo
+# MIE（Maternal and infant e-commerce）
 
 ## 说明
 1.  本套代码仅作为若依最简功能基础版本代码，没有任何实际业务功能。
