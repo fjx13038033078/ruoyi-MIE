@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.mall.mapper.MallGoodsMapper">
+    
+    <resultMap type="com.ruoyi.mall.domain.MallGoods" id="MallGoodsResult">
+        <id     property="goodsId"        column="goods_id"        />
+        <result property="categoryId"     column="category_id"     />
+        <result property="goodsName"      column="goods_name"      />
+        <result property="goodsIntro"     column="goods_intro"     />
+        <result property="goodsCover"     column="goods_cover"     />
+        <result property="price"          column="price"           />
+        <result property="originalPrice"  column="original_price"  />
+        <result property="stock"          column="stock"           />
+        <result property="sales"          column="sales"           />
+        <result property="status"         column="status"          />
+        <result property="ageStage"       column="age_stage"       />
+        <result property="detailContent"  column="detail_content"  />
+        <result property="delFlag"        column="del_flag"        />
+        <result property="createBy"       column="create_by"       />
+        <result property="createTime"     column="create_time"     />
+        <result property="updateBy"       column="update_by"       />
+        <result property="updateTime"     column="update_time"     />
+        <result property="categoryName"   column="category_name"   />
+    </resultMap>
+
+    <sql id="selectMallGoodsVo">
+        select g.goods_id, g.category_id, g.goods_name, g.goods_intro, g.goods_cover, 
+               g.price, g.original_price, g.stock, g.sales, g.status, g.age_stage, 
+               g.detail_content, g.del_flag, g.create_by, g.create_time, g.update_by, g.update_time,
+               c.category_name
+        from mall_goods g
+        left join mall_category c on g.category_id = c.category_id
+    </sql>
+
+    <select id="selectMallGoodsList" parameterType="com.ruoyi.mall.domain.MallGoods" resultMap="MallGoodsResult">
+        <include refid="selectMallGoodsVo"/>
+        <where>
+            g.del_flag = '0'
+            <if test="categoryId != null">
+                AND g.category_id = #{categoryId}
+            </if>
+            <if test="goodsName != null and goodsName != ''">
+                AND g.goods_name like concat('%', #{goodsName}, '%')
+            </if>
+            <if test="status != null and status != ''">
+                AND g.status = #{status}
+            </if>
+            <if test="ageStage != null and ageStage != ''">
+                AND g.age_stage = #{ageStage}
+            </if>
+        </where>
+        order by g.create_time desc
+    </select>
+    
+    <select id="selectMallGoodsById" parameterType="Long" resultMap="MallGoodsResult">
+        <include refid="selectMallGoodsVo"/>
+        where g.goods_id = #{goodsId} and g.del_flag = '0'
+    </select>
+        
+    <insert id="insertMallGoods" parameterType="com.ruoyi.mall.domain.MallGoods" useGeneratedKeys="true" keyProperty="goodsId">
+        insert into mall_goods
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="categoryId != null">category_id,</if>
+            <if test="goodsName != null and goodsName != ''">goods_name,</if>
+            <if test="goodsIntro != null">goods_intro,</if>
+            <if test="goodsCover != null">goods_cover,</if>
+            <if test="price != null">price,</if>
+            <if test="originalPrice != null">original_price,</if>
+            <if test="stock != null">stock,</if>
+            <if test="sales != null">sales,</if>
+            <if test="status != null">status,</if>
+            <if test="ageStage != null">age_stage,</if>
+            <if test="detailContent != null">detail_content,</if>
+            <if test="delFlag != null">del_flag,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="categoryId != null">#{categoryId},</if>
+            <if test="goodsName != null and goodsName != ''">#{goodsName},</if>
+            <if test="goodsIntro != null">#{goodsIntro},</if>
+            <if test="goodsCover != null">#{goodsCover},</if>
+            <if test="price != null">#{price},</if>
+            <if test="originalPrice != null">#{originalPrice},</if>
+            <if test="stock != null">#{stock},</if>
+            <if test="sales != null">#{sales},</if>
+            <if test="status != null">#{status},</if>
+            <if test="ageStage != null">#{ageStage},</if>
+            <if test="detailContent != null">#{detailContent},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+        </trim>
+    </insert>
+
+    <update id="updateMallGoods" parameterType="com.ruoyi.mall.domain.MallGoods">
+        update mall_goods
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="categoryId != null">category_id = #{categoryId},</if>
+            <if test="goodsName != null and goodsName != ''">goods_name = #{goodsName},</if>
+            <if test="goodsIntro != null">goods_intro = #{goodsIntro},</if>
+            <if test="goodsCover != null">goods_cover = #{goodsCover},</if>
+            <if test="price != null">price = #{price},</if>
+            <if test="originalPrice != null">original_price = #{originalPrice},</if>
+            <if test="stock != null">stock = #{stock},</if>
+            <if test="sales != null">sales = #{sales},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="ageStage != null">age_stage = #{ageStage},</if>
+            <if test="detailContent != null">detail_content = #{detailContent},</if>
+            <if test="delFlag != null">del_flag = #{delFlag},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where goods_id = #{goodsId}
+    </update>
+
+    <update id="deleteMallGoodsById" parameterType="Long">
+        update mall_goods set del_flag = '2' where goods_id = #{goodsId}
+    </update>
+
+    <update id="deleteMallGoodsByIds" parameterType="String">
+        update mall_goods set del_flag = '2' where goods_id in 
+        <foreach item="goodsId" collection="array" open="(" separator="," close=")">
+            #{goodsId}
+        </foreach>
+    </update>
+</mapper>

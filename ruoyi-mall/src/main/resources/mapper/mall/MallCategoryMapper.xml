@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.mall.mapper.MallCategoryMapper">
+    
+    <resultMap type="com.ruoyi.mall.domain.MallCategory" id="MallCategoryResult">
+        <id     property="categoryId"    column="category_id"    />
+        <result property="categoryName"  column="category_name"  />
+        <result property="parentId"      column="parent_id"      />
+        <result property="orderNum"      column="order_num"      />
+        <result property="delFlag"       column="del_flag"       />
+        <result property="createBy"      column="create_by"      />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"      column="update_by"      />
+        <result property="updateTime"    column="update_time"    />
+        <result property="parentName"    column="parent_name"    />
+    </resultMap>
+
+    <sql id="selectMallCategoryVo">
+        select c.category_id, c.category_name, c.parent_id, c.order_num, c.del_flag, 
+               c.create_by, c.create_time, c.update_by, c.update_time,
+               p.category_name as parent_name
+        from mall_category c
+        left join mall_category p on c.parent_id = p.category_id
+    </sql>
+
+    <select id="selectMallCategoryList" parameterType="com.ruoyi.mall.domain.MallCategory" resultMap="MallCategoryResult">
+        <include refid="selectMallCategoryVo"/>
+        <where>
+            c.del_flag = '0'
+            <if test="categoryName != null and categoryName != ''">
+                AND c.category_name like concat('%', #{categoryName}, '%')
+            </if>
+            <if test="parentId != null">
+                AND c.parent_id = #{parentId}
+            </if>
+        </where>
+        order by c.parent_id, c.order_num
+    </select>
+
+    <select id="selectMallCategoryAll" resultMap="MallCategoryResult">
+        select category_id, category_name, parent_id, order_num, del_flag, 
+               create_by, create_time, update_by, update_time
+        from mall_category
+        where del_flag = '0'
+        order by parent_id, order_num
+    </select>
+    
+    <select id="selectMallCategoryById" parameterType="Long" resultMap="MallCategoryResult">
+        <include refid="selectMallCategoryVo"/>
+        where c.category_id = #{categoryId} and c.del_flag = '0'
+    </select>
+
+    <select id="hasChildByParentId" parameterType="Long" resultType="int">
+        select count(1) from mall_category 
+        where parent_id = #{categoryId} and del_flag = '0'
+    </select>
+        
+    <insert id="insertMallCategory" parameterType="com.ruoyi.mall.domain.MallCategory" useGeneratedKeys="true" keyProperty="categoryId">
+        insert into mall_category
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="categoryName != null and categoryName != ''">category_name,</if>
+            <if test="parentId != null">parent_id,</if>
+            <if test="orderNum != null">order_num,</if>
+            <if test="delFlag != null">del_flag,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="categoryName != null and categoryName != ''">#{categoryName},</if>
+            <if test="parentId != null">#{parentId},</if>
+            <if test="orderNum != null">#{orderNum},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+        </trim>
+    </insert>
+
+    <update id="updateMallCategory" parameterType="com.ruoyi.mall.domain.MallCategory">
+        update mall_category
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="categoryName != null and categoryName != ''">category_name = #{categoryName},</if>
+            <if test="parentId != null">parent_id = #{parentId},</if>
+            <if test="orderNum != null">order_num = #{orderNum},</if>
+            <if test="delFlag != null">del_flag = #{delFlag},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where category_id = #{categoryId}
+    </update>
+
+    <update id="deleteMallCategoryById" parameterType="Long">
+        update mall_category set del_flag = '2' where category_id = #{categoryId}
+    </update>
+
+    <update id="deleteMallCategoryByIds" parameterType="String">
+        update mall_category set del_flag = '2' where category_id in 
+        <foreach item="categoryId" collection="array" open="(" separator="," close=")">
+            #{categoryId}
+        </foreach>
+    </update>
+</mapper>
