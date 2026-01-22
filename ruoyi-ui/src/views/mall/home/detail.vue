@@ -120,19 +120,118 @@
     <el-empty v-if="!loading && !goods.goodsId" description="商品不存在或已下架">
       <el-button type="primary" @click="goBack">返回商城首页</el-button>
     </el-empty>
+
+    <!-- 购买确认弹窗 -->
+    <el-dialog 
+      title="确认订单" 
+      :visible.sync="orderDialogVisible" 
+      width="500px" 
+      append-to-body
+      class="order-dialog"
+    >
+      <div class="order-goods-info">
+        <img :src="getImageUrl(goods.goodsCover)" class="order-goods-img" />
+        <div class="order-goods-detail">
+          <h4>{{ goods.goodsName }}</h4>
+          <p class="order-price">¥{{ formatPrice(goods.price) }} × {{ quantity }}</p>
+        </div>
+      </div>
+      <el-divider></el-divider>
+      <el-form ref="orderForm" :model="orderForm" :rules="orderRules" label-width="80px">
+        <el-form-item label="收货人" prop="receiverName">
+          <el-input v-model="orderForm.receiverName" placeholder="请输入收货人姓名" />
+        </el-form-item>
+        <el-form-item label="手机号码" prop="receiverPhone">
+          <el-input v-model="orderForm.receiverPhone" placeholder="请输入手机号码" maxlength="11" />
+        </el-form-item>
+        <el-form-item label="收货地址" prop="receiverAddress">
+          <el-input 
+            v-model="orderForm.receiverAddress" 
+            type="textarea" 
+            :rows="2" 
+            placeholder="请输入详细收货地址"
+          />
+        </el-form-item>
+      </el-form>
+      <div class="order-total">
+        <span>应付金额：</span>
+        <span class="total-price">¥{{ formatPrice(goods.price * quantity) }}</span>
+      </div>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="orderDialogVisible = false">取 消</el-button>
+        <el-button type="danger" :loading="submitLoading" @click="submitOrder">确认下单</el-button>
+      </div>
+    </el-dialog>
+
+    <!-- 下单成功弹窗 -->
+    <el-dialog 
+      title="下单成功" 
+      :visible.sync="successDialogVisible" 
+      width="400px" 
+      append-to-body
+      center
+      class="success-dialog"
+    >
+      <div class="success-content">
+        <i class="el-icon-circle-check success-icon"></i>
+        <h3>恭喜您，下单成功！</h3>
+        <p>订单号：<span class="order-no">{{ orderNo }}</span></p>
+        <p class="tips">请妥善保管订单号，以便查询订单状态</p>
+      </div>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="successDialogVisible = false">继续购物</el-button>
+        <el-button type="primary" @click="goToOrders">查看订单</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
 <script>
 import { getGoods } from "@/api/mall/goods";
+import { createOrder } from "@/api/mall/order";
 
 export default {
   name: "GoodsDetail",
   data() {
+    // 手机号验证规则
+    const validatePhone = (rule, value, callback) => {
+      const reg = /^1[3-9]\d{9}$/;
+      if (!value) {
+        callback(new Error('请输入手机号码'));
+      } else if (!reg.test(value)) {
+        callback(new Error('请输入正确的手机号码'));
+      } else {
+        callback();
+      }
+    };
     return {
       loading: false,
       goods: {},
-      quantity: 1
+      quantity: 1,
+      // 订单弹窗
+      orderDialogVisible: false,
+      submitLoading: false,
+      // 订单表单
+      orderForm: {
+        receiverName: '',
+        receiverPhone: '',
+        receiverAddress: ''
+      },
+      // 表单验证规则
+      orderRules: {
+        receiverName: [
+          { required: true, message: '请输入收货人姓名', trigger: 'blur' }
+        ],
+        receiverPhone: [
+          { required: true, validator: validatePhone, trigger: 'blur' }
+        ],
+        receiverAddress: [
+          { required: true, message: '请输入收货地址', trigger: 'blur' }
+        ]
+      },
+      // 下单成功弹窗
+      successDialogVisible: false,
+      orderNo: ''
     };
   },
   created() {
@@ -175,9 +274,44 @@ export default {
     addToCart() {
       this.$modal.msgSuccess(`已添加 ${this.quantity} 件商品到购物车`);
     },
-    /** 立即购买 */
+    /** 立即购买 - 打开确认弹窗 */
     buyNow() {
-      this.$modal.msgSuccess('功能开发中，敬请期待');
+      // 重置表单
+      this.orderForm = {
+        receiverName: '',
+        receiverPhone: '',
+        receiverAddress: ''
+      };
+      this.orderDialogVisible = true;
+    },
+    /** 提交订单 */
+    submitOrder() {
+      this.$refs['orderForm'].validate(valid => {
+        if (valid) {
+          this.submitLoading = true;
+          const orderData = {
+            goodsId: this.goods.goodsId,
+            quantity: this.quantity,
+            receiverName: this.orderForm.receiverName,
+            receiverPhone: this.orderForm.receiverPhone,
+            receiverAddress: this.orderForm.receiverAddress
+          };
+          createOrder(orderData).then(response => {
+            this.submitLoading = false;
+            this.orderDialogVisible = false;
+            // 保存订单号并显示成功弹窗（订单号在 data 字段中）
+            this.orderNo = response.data;
+            this.successDialogVisible = true;
+          }).catch(() => {
+            this.submitLoading = false;
+          });
+        }
+      });
+    },
+    /** 跳转到订单列表 */
+    goToOrders() {
+      this.successDialogVisible = false;
+      this.$router.push({ path: '/mall/orders' });
     }
   }
 };
@@ -483,6 +617,97 @@ export default {
     ::v-deep img {
       max-width: 100%;
       height: auto;
+    }
+  }
+}
+
+/* 订单确认弹窗 */
+.order-dialog {
+  .order-goods-info {
+    display: flex;
+    gap: 15px;
+    padding: 10px;
+    background: #f9f9f9;
+    border-radius: 8px;
+
+    .order-goods-img {
+      width: 80px;
+      height: 80px;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+
+    .order-goods-detail {
+      flex: 1;
+
+      h4 {
+        margin: 0 0 10px;
+        font-size: 15px;
+        color: #333;
+        line-height: 1.4;
+      }
+
+      .order-price {
+        margin: 0;
+        font-size: 16px;
+        color: #ff4757;
+        font-weight: 600;
+      }
+    }
+  }
+
+  .order-total {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+    padding: 15px 0;
+    font-size: 14px;
+    color: #666;
+
+    .total-price {
+      font-size: 24px;
+      color: #ff4757;
+      font-weight: 700;
+    }
+  }
+}
+
+/* 下单成功弹窗 */
+.success-dialog {
+  .success-content {
+    text-align: center;
+    padding: 20px 0;
+
+    .success-icon {
+      font-size: 60px;
+      color: #52c41a;
+      margin-bottom: 15px;
+    }
+
+    h3 {
+      margin: 0 0 15px;
+      font-size: 20px;
+      color: #333;
+    }
+
+    p {
+      margin: 0 0 8px;
+      font-size: 14px;
+      color: #666;
+    }
+
+    .order-no {
+      color: #ff6b9d;
+      font-weight: 600;
+      font-family: monospace;
+      font-size: 16px;
+    }
+
+    .tips {
+      font-size: 12px;
+      color: #999;
+      margin-top: 15px;
     }
   }
 }
