@@ -159,7 +159,7 @@ export default {
               left: 'center',
               top: 'center',
               style: {
-                text: '大学生学籍管理平台',
+                text: '母婴商城管理平台',
                 fontSize: 80,
                 fontWeight: 'bold',
                 lineDash: [0, 200],
