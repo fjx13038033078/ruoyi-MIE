@@ -5,6 +5,7 @@ Vue.use(Router)
 
 /* Layout */
 import Layout from '@/layout'
+import MallLayout from '@/layout/MallLayout'
 
 /**
  * Note: 路由配置项
@@ -85,6 +86,26 @@ export const constantRoutes = [
         component: () => import('@/views/system/user/profile/index'),
         name: 'Profile',
         meta: { title: '个人中心', icon: 'user' }
+      }
+    ]
+  },
+  {
+    path: '/mall',
+    component: MallLayout,
+    redirect: '/mall/home',
+    hidden: true,
+    children: [
+      {
+        path: 'home',
+        component: () => import('@/views/mall/home/index'),
+        name: 'MallHome',
+        meta: { title: '商城首页' }
+      },
+      {
+        path: 'goods/detail/:id',
+        component: () => import('@/views/mall/home/detail'),
+        name: 'GoodsDetail',
+        meta: { title: '商品详情' }
       }
     ]
   }

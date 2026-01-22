@@ -141,7 +141,16 @@ export default {
             Cookies.remove('rememberMe');
           }
           this.$store.dispatch("Login", this.loginForm).then(() => {
-            this.$router.push({ path: this.redirect || "/" }).catch(()=>{});
+            // 获取用户信息后根据角色跳转
+            this.$store.dispatch("GetInfo").then((res) => {
+              const roles = res.roles || []
+              // 管理员跳转到后台，普通用户跳转到商城首页
+              if (roles.includes('admin')) {
+                this.$router.push({ path: this.redirect || "/" }).catch(()=>{});
+              } else {
+                this.$router.push({ path: "/mall/home" }).catch(()=>{});
+              }
+            })
           }).catch(() => {
             this.loading = false;
             if (this.captchaEnabled) {

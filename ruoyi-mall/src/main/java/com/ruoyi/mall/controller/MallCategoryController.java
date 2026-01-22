@@ -36,7 +36,7 @@ public class MallCategoryController extends BaseController
     /**
      * 查询商品分类列表
      */
-    @PreAuthorize("@ss.hasPermi('mall:category:list')")
+
     @GetMapping("/list")
     public AjaxResult list(MallCategory mallCategory)
     {
@@ -47,7 +47,7 @@ public class MallCategoryController extends BaseController
     /**
      * 查询商品分类列表（树形结构）
      */
-    @PreAuthorize("@ss.hasPermi('mall:category:list')")
+
     @GetMapping("/treeList")
     public AjaxResult treeList(MallCategory mallCategory)
     {
@@ -68,7 +68,7 @@ public class MallCategoryController extends BaseController
     /**
      * 导出商品分类列表
      */
-    @PreAuthorize("@ss.hasPermi('mall:category:export')")
+
     @Log(title = "商品分类", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
     public void export(HttpServletResponse response, MallCategory mallCategory)
@@ -81,7 +81,7 @@ public class MallCategoryController extends BaseController
     /**
      * 获取商品分类详细信息
      */
-    @PreAuthorize("@ss.hasPermi('mall:category:query')")
+
     @GetMapping(value = "/{categoryId}")
     public AjaxResult getInfo(@PathVariable("categoryId") Long categoryId)
     {
@@ -91,7 +91,7 @@ public class MallCategoryController extends BaseController
     /**
      * 新增商品分类
      */
-    @PreAuthorize("@ss.hasPermi('mall:category:add')")
+
     @Log(title = "商品分类", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@Validated @RequestBody MallCategory mallCategory)
@@ -103,7 +103,7 @@ public class MallCategoryController extends BaseController
     /**
      * 修改商品分类
      */
-    @PreAuthorize("@ss.hasPermi('mall:category:edit')")
+
     @Log(title = "商品分类", businessType = BusinessType.UPDATE)
     @PutMapping
     public AjaxResult edit(@Validated @RequestBody MallCategory mallCategory)
@@ -115,7 +115,7 @@ public class MallCategoryController extends BaseController
     /**
      * 删除商品分类
      */
-    @PreAuthorize("@ss.hasPermi('mall:category:remove')")
+
     @Log(title = "商品分类", businessType = BusinessType.DELETE)
     @DeleteMapping("/{categoryId}")
     public AjaxResult remove(@PathVariable Long categoryId)

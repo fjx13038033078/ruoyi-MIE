@@ -37,7 +37,7 @@ public class MallGoodsController extends BaseController
     /**
      * 查询商品信息列表
      */
-    @PreAuthorize("@ss.hasPermi('mall:goods:list')")
+
     @GetMapping("/list")
     public TableDataInfo list(MallGoods mallGoods)
     {
@@ -49,7 +49,7 @@ public class MallGoodsController extends BaseController
     /**
      * 导出商品信息列表
      */
-    @PreAuthorize("@ss.hasPermi('mall:goods:export')")
+
     @Log(title = "商品信息", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
     public void export(HttpServletResponse response, MallGoods mallGoods)
@@ -62,7 +62,7 @@ public class MallGoodsController extends BaseController
     /**
      * 获取商品信息详细信息
      */
-    @PreAuthorize("@ss.hasPermi('mall:goods:query')")
+
     @GetMapping(value = "/{goodsId}")
     public AjaxResult getInfo(@PathVariable("goodsId") Long goodsId)
     {
@@ -72,7 +72,7 @@ public class MallGoodsController extends BaseController
     /**
      * 新增商品信息
      */
-    @PreAuthorize("@ss.hasPermi('mall:goods:add')")
+
     @Log(title = "商品信息", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@Validated @RequestBody MallGoods mallGoods)
@@ -84,7 +84,7 @@ public class MallGoodsController extends BaseController
     /**
      * 修改商品信息
      */
-    @PreAuthorize("@ss.hasPermi('mall:goods:edit')")
+
     @Log(title = "商品信息", businessType = BusinessType.UPDATE)
     @PutMapping
     public AjaxResult edit(@Validated @RequestBody MallGoods mallGoods)
@@ -96,7 +96,7 @@ public class MallGoodsController extends BaseController
     /**
      * 删除商品信息
      */
-    @PreAuthorize("@ss.hasPermi('mall:goods:remove')")
+
     @Log(title = "商品信息", businessType = BusinessType.DELETE)
     @DeleteMapping("/{goodsIds}")
     public AjaxResult remove(@PathVariable Long[] goodsIds)
