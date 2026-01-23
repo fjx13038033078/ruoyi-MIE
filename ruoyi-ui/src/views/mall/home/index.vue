@@ -19,16 +19,32 @@
           <i class="el-icon-s-goods"></i>
           <span>全部商品</span>
         </div>
-        <div 
+        <el-dropdown 
           v-for="category in categoryList" 
           :key="category.categoryId"
-          class="category-item"
-          :class="{ active: currentCategory === category.categoryId }"
-          @click="handleCategoryClick(category.categoryId)"
+          trigger="hover"
+          placement="bottom-start"
+          @command="handleCategoryClick"
         >
-          <i class="el-icon-present"></i>
-          <span>{{ category.categoryName }}</span>
-        </div>
+          <div 
+            class="category-item"
+            :class="{ active: isActiveCategory(category.categoryId) }"
+            @click="handleCategoryClick(category.categoryId)"
+          >
+            <i class="el-icon-present"></i>
+            <span>{{ category.categoryName }}</span>
+            <i v-if="category.children && category.children.length" class="el-icon-arrow-down" style="margin-left: 4px; font-size: 12px;"></i>
+          </div>
+          <el-dropdown-menu slot="dropdown" v-if="category.children && category.children.length">
+            <el-dropdown-item 
+              v-for="child in category.children" 
+              :key="child.categoryId"
+              :command="child.categoryId"
+            >
+              {{ child.categoryName }}
+            </el-dropdown-item>
+          </el-dropdown-menu>
+        </el-dropdown>
       </div>
     </div>
 
@@ -66,6 +82,15 @@
           
           <!-- 商品信息 -->
           <div class="goods-info">
+            <div class="goods-category" v-if="goods.categoryName">
+              <i class="el-icon-folder"></i>
+              <template v-if="goods.parentCategoryName">
+                {{ goods.parentCategoryName }} > {{ goods.categoryName }}
+              </template>
+              <template v-else>
+                {{ goods.categoryName }}
+              </template>
+            </div>
             <h3 class="goods-name">{{ goods.goodsName }}</h3>
             <p class="goods-intro">{{ goods.goodsIntro || '暂无简介' }}</p>
             <div class="goods-bottom">
@@ -114,7 +139,7 @@
 
 <script>
 import { listGoods } from "@/api/mall/goods";
-import { selectAllCategory } from "@/api/mall/category";
+import { treeListCategory } from "@/api/mall/category";
 
 export default {
   name: "MallHome",
@@ -124,8 +149,10 @@ export default {
       loading: false,
       // 商品列表
       goodsList: [],
-      // 分类列表
+      // 分类列表（树形结构）
       categoryList: [],
+      // 所有分类（扁平化，用于查找分类名）
+      allCategories: [],
       // 当前选中分类
       currentCategory: null,
       // 总条数
@@ -144,7 +171,7 @@ export default {
       if (this.currentCategory === null) {
         return '全部商品';
       }
-      const category = this.categoryList.find(c => c.categoryId === this.currentCategory);
+      const category = this.findCategoryById(this.currentCategory);
       return category ? category.categoryName : '全部商品';
     }
   },
@@ -153,14 +180,37 @@ export default {
     this.getGoodsList();
   },
   methods: {
-    /** 获取分类列表（只获取一级分类） */
+    /** 获取分类列表（树形结构） */
     getCategoryList() {
-      selectAllCategory().then(response => {
-        // 过滤出一级分类（parentId 为 0 或 null）
-        this.categoryList = response.data.filter(item => 
-          item.parentId === 0 || item.parentId === null
-        );
+      treeListCategory().then(response => {
+        this.categoryList = response.data;
+        // 扁平化分类列表，用于查找分类
+        this.allCategories = this.flattenCategories(response.data);
       });
+    },
+    /** 扁平化分类树 */
+    flattenCategories(categories, result = []) {
+      categories.forEach(cat => {
+        result.push(cat);
+        if (cat.children && cat.children.length) {
+          this.flattenCategories(cat.children, result);
+        }
+      });
+      return result;
+    },
+    /** 根据ID查找分类 */
+    findCategoryById(categoryId) {
+      return this.allCategories.find(c => c.categoryId === categoryId);
+    },
+    /** 判断分类是否激活（包括子分类被选中的情况） */
+    isActiveCategory(categoryId) {
+      if (this.currentCategory === categoryId) return true;
+      // 检查是否有子分类被选中
+      const category = this.categoryList.find(c => c.categoryId === categoryId);
+      if (category && category.children) {
+        return category.children.some(child => child.categoryId === this.currentCategory);
+      }
+      return false;
     },
     /** 获取商品列表 */
     getGoodsList() {
@@ -417,6 +467,19 @@ export default {
 
   .goods-info {
     padding: 16px;
+  }
+
+  .goods-category {
+    font-size: 12px;
+    color: #ff6b9d;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    
+    i {
+      font-size: 12px;
+    }
   }
 
   .goods-name {

@@ -160,14 +160,14 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="商品分类" prop="categoryId">
-              <el-select v-model="form.categoryId" placeholder="请选择分类" style="width: 100%">
-                <el-option
-                  v-for="item in categoryOptions"
-                  :key="item.categoryId"
-                  :label="item.categoryName"
-                  :value="item.categoryId"
-                />
-              </el-select>
+              <treeselect
+                v-model="form.categoryId"
+                :options="categoryTreeOptions"
+                :normalizer="normalizer"
+                :show-count="true"
+                placeholder="请选择分类"
+                style="width: 100%"
+              />
             </el-form-item>
           </el-col>
         </el-row>
@@ -236,10 +236,13 @@
 
 <script>
 import { listGoods, getGoods, delGoods, addGoods, updateGoods } from "@/api/mall/goods";
-import { selectAllCategory } from "@/api/mall/category";
+import { selectAllCategory, treeListCategory } from "@/api/mall/category";
+import Treeselect from "@riophae/vue-treeselect";
+import "@riophae/vue-treeselect/dist/vue-treeselect.css";
 
 export default {
   name: "Goods",
+  components: { Treeselect },
   data() {
     return {
       // 遮罩层
@@ -256,8 +259,10 @@ export default {
       total: 0,
       // 商品表格数据
       goodsList: [],
-      // 分类选项
+      // 分类选项（扁平列表，用于搜索）
       categoryOptions: [],
+      // 分类树选项（用于弹窗选择）
+      categoryTreeOptions: [],
       // 弹出层标题
       title: "",
       // 是否显示弹出层
@@ -303,9 +308,25 @@ export default {
     },
     /** 获取分类选项 */
     getCategoryOptions() {
+      // 获取扁平列表（用于搜索下拉）
       selectAllCategory().then(response => {
         this.categoryOptions = response.data;
       });
+      // 获取树形列表（用于表单选择）
+      treeListCategory().then(response => {
+        this.categoryTreeOptions = response.data;
+      });
+    },
+    /** 转换分类数据结构（用于Treeselect组件） */
+    normalizer(node) {
+      if (node.children && !node.children.length) {
+        delete node.children;
+      }
+      return {
+        id: node.categoryId,
+        label: node.categoryName,
+        children: node.children
+      };
     },
     // 取消按钮
     cancel() {

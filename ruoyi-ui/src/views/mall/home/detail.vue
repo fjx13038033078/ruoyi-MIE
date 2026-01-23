@@ -42,7 +42,14 @@
           <div class="goods-attrs">
             <div class="attr-item">
               <span class="attr-label">分类</span>
-              <span class="attr-value">{{ goods.categoryName || '未分类' }}</span>
+              <span class="attr-value category-path">
+                <template v-if="goods.parentCategoryName">
+                  {{ goods.parentCategoryName }} <i class="el-icon-arrow-right"></i> {{ goods.categoryName }}
+                </template>
+                <template v-else>
+                  {{ goods.categoryName || '未分类' }}
+                </template>
+              </span>
             </div>
             <div class="attr-item">
               <span class="attr-label">库存</span>
@@ -508,6 +515,18 @@ export default {
 
     &.low-stock {
       color: #ff4757;
+    }
+
+    &.category-path {
+      color: #ff6b9d;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      
+      i {
+        font-size: 12px;
+        color: #999;
+      }
     }
   }
 }

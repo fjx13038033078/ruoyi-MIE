@@ -23,15 +23,18 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="updateBy"       column="update_by"       />
         <result property="updateTime"     column="update_time"     />
         <result property="categoryName"   column="category_name"   />
+        <result property="parentCategoryName" column="parent_category_name" />
     </resultMap>
 
     <sql id="selectMallGoodsVo">
         select g.goods_id, g.category_id, g.goods_name, g.goods_intro, g.goods_cover, 
                g.price, g.original_price, g.stock, g.sales, g.status, g.age_stage, 
                g.detail_content, g.del_flag, g.create_by, g.create_time, g.update_by, g.update_time,
-               c.category_name
+               c.category_name,
+               pc.category_name as parent_category_name
         from mall_goods g
         left join mall_category c on g.category_id = c.category_id
+        left join mall_category pc on c.parent_id = pc.category_id
     </sql>
 
     <select id="selectMallGoodsList" parameterType="com.ruoyi.mall.domain.MallGoods" resultMap="MallGoodsResult">

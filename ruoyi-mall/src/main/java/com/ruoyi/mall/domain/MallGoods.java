@@ -68,4 +68,15 @@ public class MallGoods extends BaseEntity
 
     /** 分类名称（非数据库字段，用于展示） */
     private String categoryName;
+
+    /** 父分类名称（非数据库字段，用于展示分类路径） */
+    private String parentCategoryName;
+
+    /** 获取完整分类路径（如：奶粉辅食 > 婴儿奶粉） */
+    public String getCategoryPath() {
+        if (parentCategoryName != null && !parentCategoryName.isEmpty()) {
+            return parentCategoryName + " > " + categoryName;
+        }
+        return categoryName;
+    }
 }
