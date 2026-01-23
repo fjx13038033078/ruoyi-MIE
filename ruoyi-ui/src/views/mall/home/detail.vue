@@ -111,14 +111,97 @@
         </div>
       </div>
 
-      <!-- 商品详情 -->
+      <!-- 商品详情和评论Tab切换 -->
       <div class="goods-detail-section">
         <div class="section-tabs">
-          <div class="tab-item active">
+          <div 
+            class="tab-item" 
+            :class="{ active: activeTab === 'detail' }"
+            @click="activeTab = 'detail'"
+          >
             <i class="el-icon-document"></i> 商品详情
           </div>
+          <div 
+            class="tab-item" 
+            :class="{ active: activeTab === 'comment' }"
+            @click="activeTab = 'comment'"
+          >
+            <i class="el-icon-chat-dot-round"></i> 商品评价 ({{ commentCount }})
+          </div>
         </div>
-        <div class="detail-content" v-html="goods.detailContent || '<p style=\'text-align:center;color:#999;padding:60px 0;\'>暂无详情</p>'">
+        
+        <!-- 商品详情内容 -->
+        <div class="detail-content" v-show="activeTab === 'detail'" v-html="goods.detailContent || '<p style=\'text-align:center;color:#999;padding:60px 0;\'>暂无详情</p>'">
+        </div>
+
+        <!-- 评论区域 -->
+        <div class="comment-section" v-show="activeTab === 'comment'">
+          <!-- 评分统计 -->
+          <div class="comment-stats">
+            <div class="avg-star">
+              <span class="star-value">{{ avgStar.toFixed(1) }}</span>
+              <el-rate v-model="avgStar" disabled allow-half />
+            </div>
+            <span class="comment-total">共 {{ commentCount }} 条评价</span>
+          </div>
+
+          <!-- 发表评论 -->
+          <div class="comment-form">
+            <h4><i class="el-icon-edit"></i> 发表评价</h4>
+            <el-form ref="commentForm" :model="commentForm" :rules="commentRules">
+              <el-form-item prop="star">
+                <span class="form-label">评分：</span>
+                <el-rate v-model="commentForm.star" show-text :texts="['很差', '较差', '一般', '满意', '非常满意']" />
+              </el-form-item>
+              <el-form-item prop="content">
+                <el-input
+                  v-model="commentForm.content"
+                  type="textarea"
+                  :rows="3"
+                  placeholder="说说你的使用感受吧~"
+                  maxlength="500"
+                  show-word-limit
+                />
+              </el-form-item>
+              <el-form-item>
+                <el-button type="primary" :loading="commentLoading" @click="submitComment">
+                  <i class="el-icon-s-promotion"></i> 发表评价
+                </el-button>
+              </el-form-item>
+            </el-form>
+          </div>
+
+          <!-- 评论列表 -->
+          <div class="comment-list">
+            <div v-if="commentList.length === 0" class="no-comment">
+              <el-empty description="暂无评价，快来发表第一条评价吧~" />
+            </div>
+            <div v-else class="comment-item" v-for="item in commentList" :key="item.commentId">
+              <div class="comment-avatar">
+                <el-avatar v-if="item.avatar" :src="getAvatarUrl(item.avatar)" :size="45" />
+                <el-avatar v-else :size="45" icon="el-icon-user-solid" />
+              </div>
+              <div class="comment-content">
+                <div class="comment-header">
+                  <span class="user-name">{{ item.userName || '匿名用户' }}</span>
+                  <el-rate v-model="item.star" disabled :show-score="false" />
+                </div>
+                <p class="comment-text">{{ item.content }}</p>
+                <div class="comment-footer">
+                  <span class="comment-time">{{ parseTime(item.createTime) }}</span>
+                  <el-button 
+                    v-if="isMyComment(item.userId)"
+                    type="text" 
+                    size="mini" 
+                    class="delete-btn"
+                    @click="handleDeleteComment(item)"
+                  >
+                    <i class="el-icon-delete"></i> 删除
+                  </el-button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -196,6 +279,9 @@
 <script>
 import { getGoods } from "@/api/mall/goods";
 import { createOrder } from "@/api/mall/order";
+import { listCommentByGoodsId, getCommentStats, addComment, deleteMyComment } from "@/api/mall/comment";
+import { recordViewLog } from "@/api/mall/viewlog";
+import store from '@/store';
 
 export default {
   name: "GoodsDetail",
@@ -215,6 +301,26 @@ export default {
       loading: false,
       goods: {},
       quantity: 1,
+      // Tab切换
+      activeTab: 'detail',
+      // 评论相关
+      commentList: [],
+      commentCount: 0,
+      avgStar: 5,
+      commentLoading: false,
+      commentForm: {
+        star: 5,
+        content: ''
+      },
+      commentRules: {
+        star: [
+          { required: true, message: '请选择评分', trigger: 'change' }
+        ],
+        content: [
+          { required: true, message: '请输入评价内容', trigger: 'blur' },
+          { min: 5, max: 500, message: '评价内容需要5-500个字符', trigger: 'blur' }
+        ]
+      },
       // 订单弹窗
       orderDialogVisible: false,
       submitLoading: false,
@@ -241,10 +347,18 @@ export default {
       orderNo: ''
     };
   },
+  computed: {
+    // 获取当前登录用户ID
+    currentUserId() {
+      return store.getters && store.getters.userId;
+    }
+  },
   created() {
     const goodsId = this.$route.params.id;
     if (goodsId) {
       this.getGoodsDetail(goodsId);
+      this.getCommentList(goodsId);
+      this.getCommentStatistics(goodsId);
     }
   },
   methods: {
@@ -254,9 +368,76 @@ export default {
       getGoods(goodsId).then(response => {
         this.goods = response.data || {};
         this.loading = false;
+        // 记录浏览行为（静默调用，不影响页面展示）
+        this.recordView(goodsId);
       }).catch(() => {
         this.loading = false;
       });
+    },
+    /** 记录用户浏览行为 */
+    recordView(goodsId) {
+      // 静默记录，不处理响应结果
+      recordViewLog(goodsId).catch(() => {
+        // 记录失败不影响用户体验，静默处理
+      });
+    },
+    /** 获取评论列表 */
+    getCommentList(goodsId) {
+      listCommentByGoodsId(goodsId).then(response => {
+        this.commentList = response.data || [];
+      });
+    },
+    /** 获取评论统计 */
+    getCommentStatistics(goodsId) {
+      getCommentStats(goodsId).then(response => {
+        this.avgStar = response.avgStar || 5;
+        this.commentCount = response.count || 0;
+      });
+    },
+    /** 判断是否是自己的评论 */
+    isMyComment(userId) {
+      return this.currentUserId && this.currentUserId === userId;
+    },
+    /** 获取头像URL */
+    getAvatarUrl(avatar) {
+      if (!avatar) return '';
+      if (avatar.startsWith('http')) return avatar;
+      return process.env.VUE_APP_BASE_API + avatar;
+    },
+    /** 提交评论 */
+    submitComment() {
+      this.$refs['commentForm'].validate(valid => {
+        if (valid) {
+          this.commentLoading = true;
+          const data = {
+            goodsId: this.goods.goodsId,
+            star: this.commentForm.star,
+            content: this.commentForm.content
+          };
+          addComment(data).then(() => {
+            this.$modal.msgSuccess('评价发表成功');
+            this.commentForm = { star: 5, content: '' };
+            this.$refs['commentForm'].resetFields();
+            // 刷新评论列表和统计
+            this.getCommentList(this.goods.goodsId);
+            this.getCommentStatistics(this.goods.goodsId);
+            this.commentLoading = false;
+          }).catch(() => {
+            this.commentLoading = false;
+          });
+        }
+      });
+    },
+    /** 删除评论 */
+    handleDeleteComment(item) {
+      this.$modal.confirm('确定要删除这条评价吗？').then(() => {
+        return deleteMyComment(item.commentId);
+      }).then(() => {
+        this.$modal.msgSuccess('删除成功');
+        // 刷新评论列表和统计
+        this.getCommentList(this.goods.goodsId);
+        this.getCommentStatistics(this.goods.goodsId);
+      }).catch(() => {});
     },
     /** 返回首页 */
     goBack() {
@@ -618,6 +799,11 @@ export default {
       gap: 8px;
       border-bottom: 3px solid transparent;
       margin-bottom: -1px;
+      transition: all 0.3s;
+
+      &:hover {
+        color: #ff6b9d;
+      }
 
       &.active {
         color: #ff6b9d;
@@ -636,6 +822,140 @@ export default {
     ::v-deep img {
       max-width: 100%;
       height: auto;
+    }
+  }
+}
+
+/* 评论区域 */
+.comment-section {
+  padding: 30px;
+
+  .comment-stats {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 20px;
+    background: linear-gradient(135deg, #fff9f0, #fff5f5);
+    border-radius: 12px;
+    margin-bottom: 25px;
+
+    .avg-star {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+
+      .star-value {
+        font-size: 36px;
+        font-weight: 700;
+        color: #ff6b9d;
+      }
+    }
+
+    .comment-total {
+      font-size: 14px;
+      color: #999;
+    }
+  }
+
+  .comment-form {
+    background: #fafafa;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 25px;
+
+    h4 {
+      margin: 0 0 15px;
+      font-size: 16px;
+      color: #333;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+
+      i {
+        color: #ff6b9d;
+      }
+    }
+
+    .form-label {
+      font-size: 14px;
+      color: #666;
+      margin-right: 10px;
+    }
+
+    .el-button--primary {
+      background: linear-gradient(135deg, #ff6b9d, #ff8a65);
+      border: none;
+      border-radius: 20px;
+      padding: 10px 30px;
+
+      &:hover {
+        opacity: 0.9;
+      }
+    }
+  }
+
+  .comment-list {
+    .no-comment {
+      padding: 40px 0;
+    }
+
+    .comment-item {
+      display: flex;
+      gap: 15px;
+      padding: 20px 0;
+      border-bottom: 1px solid #f5f5f5;
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      .comment-avatar {
+        flex-shrink: 0;
+      }
+
+      .comment-content {
+        flex: 1;
+
+        .comment-header {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 8px;
+
+          .user-name {
+            font-size: 15px;
+            font-weight: 500;
+            color: #333;
+          }
+        }
+
+        .comment-text {
+          font-size: 14px;
+          color: #555;
+          line-height: 1.6;
+          margin: 0 0 10px;
+        }
+
+        .comment-footer {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+
+          .comment-time {
+            font-size: 12px;
+            color: #999;
+          }
+
+          .delete-btn {
+            color: #ff4757;
+            padding: 0;
+
+            &:hover {
+              opacity: 0.8;
+            }
+          }
+        }
+      }
     }
   }
 }

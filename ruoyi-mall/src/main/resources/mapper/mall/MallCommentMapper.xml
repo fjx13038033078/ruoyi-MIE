@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.mall.mapper.MallCommentMapper">
+    
+    <resultMap type="com.ruoyi.mall.domain.MallComment" id="MallCommentResult">
+        <id     property="commentId"   column="comment_id"    />
+        <result property="userId"      column="user_id"       />
+        <result property="goodsId"     column="goods_id"      />
+        <result property="star"        column="star"          />
+        <result property="content"     column="content"       />
+        <result property="createTime"  column="create_time"   />
+        <result property="userName"    column="user_name"     />
+        <result property="avatar"      column="avatar"        />
+        <result property="goodsName"   column="goods_name"    />
+        <result property="goodsCover"  column="goods_cover"   />
+    </resultMap>
+
+    <sql id="selectMallCommentVo">
+        select c.comment_id, c.user_id, c.goods_id, c.star, c.content, c.create_time,
+               u.nick_name as user_name, u.avatar,
+               g.goods_name, g.goods_cover
+        from mall_comment c
+        left join sys_user u on c.user_id = u.user_id
+        left join mall_goods g on c.goods_id = g.goods_id
+    </sql>
+
+    <select id="selectMallCommentList" parameterType="com.ruoyi.mall.domain.MallComment" resultMap="MallCommentResult">
+        <include refid="selectMallCommentVo"/>
+        <where>
+            <if test="userId != null">
+                AND c.user_id = #{userId}
+            </if>
+            <if test="goodsId != null">
+                AND c.goods_id = #{goodsId}
+            </if>
+            <if test="star != null">
+                AND c.star = #{star}
+            </if>
+            <if test="content != null and content != ''">
+                AND c.content like concat('%', #{content}, '%')
+            </if>
+            <if test="goodsName != null and goodsName != ''">
+                AND g.goods_name like concat('%', #{goodsName}, '%')
+            </if>
+            <if test="userName != null and userName != ''">
+                AND u.nick_name like concat('%', #{userName}, '%')
+            </if>
+        </where>
+        order by c.create_time desc
+    </select>
+    
+    <select id="selectMallCommentById" parameterType="Long" resultMap="MallCommentResult">
+        <include refid="selectMallCommentVo"/>
+        where c.comment_id = #{commentId}
+    </select>
+
+    <select id="selectMallCommentByGoodsId" parameterType="Long" resultMap="MallCommentResult">
+        <include refid="selectMallCommentVo"/>
+        where c.goods_id = #{goodsId}
+        order by c.create_time desc
+    </select>
+
+    <select id="selectMallCommentByUserId" parameterType="Long" resultMap="MallCommentResult">
+        <include refid="selectMallCommentVo"/>
+        where c.user_id = #{userId}
+        order by c.create_time desc
+    </select>
+
+    <select id="selectAvgStarByGoodsId" parameterType="Long" resultType="Double">
+        select avg(star) from mall_comment where goods_id = #{goodsId}
+    </select>
+
+    <select id="selectCountByGoodsId" parameterType="Long" resultType="int">
+        select count(*) from mall_comment where goods_id = #{goodsId}
+    </select>
+        
+    <insert id="insertMallComment" parameterType="com.ruoyi.mall.domain.MallComment" useGeneratedKeys="true" keyProperty="commentId">
+        insert into mall_comment
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="userId != null">user_id,</if>
+            <if test="goodsId != null">goods_id,</if>
+            <if test="star != null">star,</if>
+            <if test="content != null">content,</if>
+            <if test="createTime != null">create_time,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="userId != null">#{userId},</if>
+            <if test="goodsId != null">#{goodsId},</if>
+            <if test="star != null">#{star},</if>
+            <if test="content != null">#{content},</if>
+            <if test="createTime != null">#{createTime},</if>
+        </trim>
+    </insert>
+
+    <update id="updateMallComment" parameterType="com.ruoyi.mall.domain.MallComment">
+        update mall_comment
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="userId != null">user_id = #{userId},</if>
+            <if test="goodsId != null">goods_id = #{goodsId},</if>
+            <if test="star != null">star = #{star},</if>
+            <if test="content != null">content = #{content},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+        </trim>
+        where comment_id = #{commentId}
+    </update>
+
+    <delete id="deleteMallCommentById" parameterType="Long">
+        delete from mall_comment where comment_id = #{commentId}
+    </delete>
+
+    <delete id="deleteMallCommentByIds" parameterType="String">
+        delete from mall_comment where comment_id in 
+        <foreach item="commentId" collection="array" open="(" separator="," close=")">
+            #{commentId}
+        </foreach>
+    </delete>
+</mapper>
