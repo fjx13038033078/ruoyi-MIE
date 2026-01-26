@@ -1,214 +1,339 @@
 <template>
-  <div>
-    <div ref="echartsText" style="margin-top: 10px; height: 100px; display: flex; justify-content: center; align-items: center;">
-      <!-- 这里 ECharts 动画文本会被渲染 -->
+  <div class="dashboard-container">
+    <!-- 顶部标题区域 -->
+    <div class="dashboard-header">
+      <div class="header-left">
+        <div class="title-line"></div>
+        <div class="title-content">
+          <h1 class="main-title">母婴商城管理平台</h1>
+          <p class="sub-title">欢迎回来，祝您工作顺利</p>
+        </div>
+      </div>
+      <div class="header-right">
+        <i class="el-icon-date"></i>
+        <span class="header-time">{{ currentTime }}</span>
+      </div>
     </div>
-    <div>
-      <!-- 通知公告 -->
-      <el-row style="margin-top: 10px;">
-        <el-col :span="12">
-          <el-card style="margin-right: 20px; height: 420px;">
-            <h3 slot="header">通知公告</h3>
-            <el-table v-loading="loading" :data="noticeList">
-              <el-table-column label="序号" align="center" prop="noticeId" width="100"/>
-              <el-table-column
-                label="公告标题"
-                align="center"
-                prop="noticeTitle"
-                :show-overflow-tooltip="true"
-              >
-                <template slot-scope="scope">
-                  <span @click="showNoticeContent(scope.row)">{{ scope.row.noticeTitle }}</span>
-                </template>
-              </el-table-column>
-              <el-table-column label="公告类型" align="center" prop="noticeType" width="100">
-                <template slot-scope="scope">
-                  <dict-tag :options="dict.type.sys_notice_type" :value="scope.row.noticeType"/>
-                </template>
-              </el-table-column>
-              <el-table-column label="创建时间" align="center" prop="createTime" width="100">
-                <template slot-scope="scope">
-                  <span>{{ parseTime(scope.row.createTime, '{y}-{m}-{d}') }}</span>
-                </template>
-              </el-table-column>
-            </el-table>
-          </el-card>
-        </el-col>
-        <el-col :span="12">
-          <el-card style="margin-right: 20px; height: 420px;">
-            <h3 slot="header">校外链接</h3>
-            <el-carousel :interval="5000" arrow="always">
-              <el-carousel-item>
-                <a href="https://www.baidu.com" target="_blank">
-                  <img src="../assets/images/01.jpg" alt="Image 1" style="width: 100%;">
-                </a>
-              </el-carousel-item>
-              <el-carousel-item>
-                <a href="https://www.jd.com" target="_blank">
-                  <img src="../assets/images/02.jpg" alt="Image 2" style="width: 100%;">
-                </a>
-              </el-carousel-item>
-              <el-carousel-item>
-                <a href="https://www.taobao.com" target="_blank">
-                  <img src="../assets/images/03.jpg" alt="Image 3" style="width: 100%;">
-                </a>
-              </el-carousel-item>
-            </el-carousel>
-          </el-card>
+
+    <!-- 统计卡片区域 -->
+    <el-row :gutter="16" class="stats-row">
+      <!-- 商品统计 -->
+      <el-col :xs="24" :sm="12" :lg="6">
+        <el-card class="stat-card" shadow="hover">
+          <div class="stat-header">
+            <span class="stat-title">商品总数</span>
+            <i class="el-icon-goods stat-icon goods-icon"></i>
+          </div>
+          <div class="stat-value">{{ statistics.goodsTotal || 0 }}</div>
+          <div class="stat-footer">
+            <span>在售商品</span>
+            <span class="stat-sub-value">{{ statistics.goodsOnSale || 0 }} 件</span>
+          </div>
+        </el-card>
+      </el-col>
+
+      <!-- 订单统计 -->
+      <el-col :xs="24" :sm="12" :lg="6">
+        <el-card class="stat-card" shadow="hover">
+          <div class="stat-header">
+            <span class="stat-title">订单总数</span>
+            <i class="el-icon-s-order stat-icon order-icon"></i>
+          </div>
+          <div class="stat-value">{{ statistics.orderTotal || 0 }}</div>
+          <div class="stat-footer">
+            <span>已支付</span>
+            <span class="stat-sub-value">{{ statistics.orderPaid || 0 }} 笔</span>
+          </div>
+        </el-card>
+      </el-col>
+
+      <!-- 评论统计 -->
+      <el-col :xs="24" :sm="12" :lg="6">
+        <el-card class="stat-card" shadow="hover">
+          <div class="stat-header">
+            <span class="stat-title">评论总数</span>
+            <i class="el-icon-chat-dot-round stat-icon comment-icon"></i>
+          </div>
+          <div class="stat-value">{{ statistics.commentTotal || 0 }}</div>
+          <div class="stat-footer">
+            <span>用户反馈</span>
+            <span class="stat-sub-value">持续增长</span>
+          </div>
+        </el-card>
+      </el-col>
+
+      <!-- 浏览统计 -->
+      <el-col :xs="24" :sm="12" :lg="6">
+        <el-card class="stat-card" shadow="hover">
+          <div class="stat-header">
+            <span class="stat-title">浏览记录</span>
+            <i class="el-icon-view stat-icon view-icon"></i>
+          </div>
+          <div class="stat-value">{{ statistics.viewTotal || 0 }}</div>
+          <div class="stat-footer">
+            <span>行为数据</span>
+            <span class="stat-sub-value">推荐依据</span>
+          </div>
+        </el-card>
+      </el-col>
+    </el-row>
+
+    <!-- 快捷入口 -->
+    <el-card class="quick-card" shadow="never">
+      <div slot="header" class="quick-header">
+        <i class="el-icon-menu"></i>
+        <span>快捷入口</span>
+      </div>
+      <el-row :gutter="16">
+        <el-col :xs="12" :sm="6" :lg="3" v-for="item in quickLinks" :key="item.name">
+          <div class="quick-item" @click="navigateTo(item.path)">
+            <div class="quick-icon" :class="item.iconClass">
+              <i :class="item.icon"></i>
+            </div>
+            <span class="quick-name">{{ item.name }}</span>
+          </div>
         </el-col>
       </el-row>
-      <!-- 弹出的公告内容卡片 -->
-      <el-dialog :title="selectedNotice.title" :visible.sync="showNoticeDialog" width="780px" append-to-body>
-        <div slot="title" style="text-align: center;">{{ selectedNotice.title }}</div>
-        <div v-html="selectedNotice.content" class="notice-content"></div>
-      </el-dialog>
-    </div>
+    </el-card>
   </div>
 </template>
+
 <script>
-import * as echarts from 'echarts'
-import {parseTime} from "../utils/ruoyi";
-import {getNotice, listNotice} from "../api/system/notice";
+import { getOverviewStatistics } from "@/api/mall/statistics";
 
 export default {
-  name: "Notice",
-  dicts: ['sys_notice_status', 'sys_notice_type'],
+  name: "Dashboard",
   data() {
     return {
-      // 遮罩层
-      loading: true,
-      // 选中数组
-      ids: [],
-      // 非单个禁用
-      single: true,
-      // 非多个禁用
-      multiple: true,
-      // 显示搜索条件
-      showSearch: true,
-      // 总条数
-      total: 0,
-      // 公告表格数据
-      noticeList: [],
-      // 弹出层标题
-      title: "",
-      // 是否显示弹出层
-      open: false,
-      failureRateByCourseData: {},
-      averageScoreByCourseData: {},
-      // 查询参数
-      queryParams: {
-        pageNum: 1,
-        pageSize: 10,
-        noticeTitle: undefined,
-        createBy: undefined,
-        status: undefined
+      statistics: {
+        goodsTotal: 0,
+        goodsOnSale: 0,
+        orderTotal: 0,
+        orderPaid: 0,
+        commentTotal: 0,
+        viewTotal: 0
       },
-      selectedNotice: {
-        title: '',
-        content: ''
-      },
-      showNoticeDialog: false,
-      // 表单参数
-      form: {},
-      // 表单校验
-      rules: {
-        noticeTitle: [
-          {required: true, message: "公告标题不能为空", trigger: "blur"}
-        ],
-        noticeType: [
-          {required: true, message: "公告类型不能为空", trigger: "change"}
-        ]
-      }
+      currentTime: '',
+      timer: null,
+      quickLinks: [
+        { name: '商品管理', path: '/mall/goods', icon: 'el-icon-goods', iconClass: 'icon-purple' },
+        { name: '分类管理', path: '/mall/category', icon: 'el-icon-folder', iconClass: 'icon-teal' },
+        { name: '订单管理', path: '/mall/order', icon: 'el-icon-s-order', iconClass: 'icon-blue' },
+        { name: '评论管理', path: '/mall/comment', icon: 'el-icon-chat-dot-round', iconClass: 'icon-green' },
+        { name: '用户管理', path: '/system/user', icon: 'el-icon-user', iconClass: 'icon-orange' }
+      ]
     };
   },
   created() {
-    this.getList();
+    this.getStatistics();
+    this.updateTime();
+    this.timer = setInterval(this.updateTime, 1000);
   },
-  mounted() {
-    this.initEchartsText();
+  beforeDestroy() {
+    if (this.timer) {
+      clearInterval(this.timer);
+    }
   },
   methods: {
-    parseTime,
-    /** 查询公告列表 */
-    getList() {
-      this.loading = true;
-      listNotice(this.queryParams).then(response => {
-        this.noticeList = response.rows;
-        this.total = response.total;
-        this.loading = false;
-      });
+    getStatistics() {
+      getOverviewStatistics().then(response => {
+        this.statistics = response.data || {};
+      }).catch(() => {});
     },
-    showNoticeContent(row) {
-      this.loading = true;
-      getNotice(row.noticeId).then((response) => {
-        this.selectedNotice.title = response.data.noticeTitle;
-        this.selectedNotice.content = response.data.noticeContent;
-        this.showNoticeDialog = true;
-        this.loading = false;
-      });
+    updateTime() {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+      const weekday = weekdays[now.getDay()];
+      this.currentTime = `${year}-${month}-${day} ${weekday} ${hours}:${minutes}`;
     },
-    // 初始化 ECharts 动画文本
-    initEchartsText() {
-      const chartDom = this.$refs.echartsText;
-      const myChart = echarts.init(chartDom);
-      const option = {
-        graphic: {
-          elements: [
-            {
-              type: 'text',
-              left: 'center',
-              top: 'center',
-              style: {
-                text: '母婴商城管理平台',
-                fontSize: 80,
-                fontWeight: 'bold',
-                lineDash: [0, 200],
-                lineDashOffset: 0,
-                fill: 'transparent',
-                stroke: '#000',
-                lineWidth: 1
-              },
-              keyframeAnimation: {
-                duration: 3000,
-                loop: true,
-                keyframes: [
-                  {
-                    percent: 0.7,
-                    style: {
-                      fill: 'transparent',
-                      lineDashOffset: 200,
-                      lineDash: [200, 0]
-                    }
-                  },
-                  {
-                    percent: 0.8,
-                    style: {
-                      fill: 'transparent'
-                    }
-                  },
-                  {
-                    percent: 1,
-                    style: {
-                      fill: 'black'
-                    }
-                  }
-                ]
-              }
-            }
-          ]
-        }
-      };
-      myChart.setOption(option);
-    },
+    navigateTo(path) {
+      this.$router.push(path);
+    }
   }
 };
 </script>
 
 <style scoped lang="scss">
-.notice-content::v-deep img {
-  max-width: 100%;
-  height: auto;
-  display: block;
-  margin: 0 auto;
+.dashboard-container {
+  padding: 20px;
+  background: #f0f2f5;
+  min-height: calc(100vh - 84px);
+}
+
+/* 顶部标题 */
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 24px;
+  background: #fff;
+  border-left: 4px solid #409eff;
+
+  .header-left {
+    display: flex;
+    align-items: stretch;
+
+    .title-line {
+      width: 4px;
+      background: #409eff;
+      margin-right: 16px;
+      display: none;
+    }
+
+    .title-content {
+      .main-title {
+        font-size: 20px;
+        font-weight: 600;
+        color: #303133;
+        margin: 0 0 6px;
+        letter-spacing: 1px;
+      }
+
+      .sub-title {
+        font-size: 13px;
+        color: #909399;
+        margin: 0;
+      }
+    }
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    color: #606266;
+    font-size: 14px;
+
+    i {
+      margin-right: 6px;
+      color: #909399;
+    }
+  }
+}
+
+/* 统计卡片 */
+.stats-row {
+  margin-bottom: 20px;
+}
+
+.stat-card {
+  border-radius: 4px;
+  margin-bottom: 16px;
+
+  .stat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+
+    .stat-title {
+      font-size: 14px;
+      color: #909399;
+    }
+
+    .stat-icon {
+      font-size: 24px;
+    }
+
+    .goods-icon { color: #7c4dff; }
+    .order-icon { color: #ff6b81; }
+    .comment-icon { color: #3498db; }
+    .view-icon { color: #2ecc71; }
+  }
+
+  .stat-value {
+    font-size: 32px;
+    font-weight: 600;
+    color: #303133;
+    margin-bottom: 12px;
+  }
+
+  .stat-footer {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: #909399;
+    padding-top: 12px;
+    border-top: 1px solid #f0f0f0;
+
+    .stat-sub-value {
+      color: #606266;
+    }
+  }
+}
+
+/* 快捷入口 */
+.quick-card {
+  border-radius: 4px;
+
+  .quick-header {
+    font-size: 15px;
+    font-weight: 500;
+    color: #303133;
+
+    i {
+      margin-right: 8px;
+      color: #409eff;
+    }
+  }
+}
+
+.quick-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 8px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.2s;
+
+  &:hover {
+    background: #f5f7fa;
+  }
+
+  .quick-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 8px;
+
+    i {
+      font-size: 20px;
+      color: #fff;
+    }
+  }
+
+  .quick-name {
+    font-size: 13px;
+    color: #606266;
+  }
+}
+
+/* 图标颜色 */
+.icon-purple { background: #7c4dff; }
+.icon-teal { background: #009688; }
+.icon-blue { background: #3498db; }
+.icon-green { background: #2ecc71; }
+.icon-orange { background: #f39c12; }
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .stat-card {
+    margin-bottom: 12px;
+  }
 }
 </style>

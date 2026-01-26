@@ -89,4 +89,12 @@ public interface MallCommentMapper
      * @return 评价数量
      */
     public int selectCountByGoodsId(Long goodsId);
+
+    /**
+     * 查询所有评论（用于协同过滤）
+     * 返回 Map 列表，包含 userId, goodsId, star
+     * 
+     * @return 评论记录列表
+     */
+    public List<java.util.Map<String, Object>> selectAllCommentsForCF();
 }

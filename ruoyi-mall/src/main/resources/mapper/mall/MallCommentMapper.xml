@@ -116,4 +116,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             #{commentId}
         </foreach>
     </delete>
+
+    <!-- 查询所有评论用于协同过滤 -->
+    <select id="selectAllCommentsForCF" resultType="map">
+        select user_id as userId, goods_id as goodsId, star from mall_comment
+    </select>
 </mapper>

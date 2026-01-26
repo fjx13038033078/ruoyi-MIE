@@ -95,4 +95,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             #{viewId}
         </foreach>
     </delete>
+
+    <!-- 查询所有浏览记录用于协同过滤 -->
+    <select id="selectAllViewLogsForCF" resultType="map">
+        select user_id as userId, goods_id as goodsId from mall_view_log
+    </select>
 </mapper>

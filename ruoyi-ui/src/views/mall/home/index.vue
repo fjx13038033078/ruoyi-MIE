@@ -48,6 +48,41 @@
       </div>
     </div>
 
+    <!-- 猜你喜欢区域 -->
+    <div class="recommend-section" v-if="recommendList.length > 0">
+      <div class="section-header">
+        <h2 class="section-title">
+          <i class="el-icon-magic-stick"></i>
+          猜你喜欢
+        </h2>
+        <span class="recommend-tip">基于您的浏览和评价记录智能推荐</span>
+      </div>
+      <div class="recommend-grid">
+        <el-card 
+          v-for="goods in recommendList" 
+          :key="'rec-' + goods.goodsId"
+          class="recommend-card"
+          :body-style="{ padding: '0' }"
+          shadow="hover"
+          @click.native="goToDetail(goods.goodsId)"
+        >
+          <div class="recommend-image">
+            <img :src="getImageUrl(goods.goodsCover)" :alt="goods.goodsName" />
+            <div class="recommend-tag">
+              <i class="el-icon-star-on"></i> 为你推荐
+            </div>
+          </div>
+          <div class="recommend-info">
+            <h4 class="recommend-name">{{ goods.goodsName }}</h4>
+            <div class="recommend-price">
+              <span class="symbol">¥</span>
+              <span class="value">{{ formatPrice(goods.price) }}</span>
+            </div>
+          </div>
+        </el-card>
+      </div>
+    </div>
+
     <!-- 商品展示区 -->
     <div class="goods-section">
       <div class="section-header">
@@ -140,6 +175,7 @@
 <script>
 import { listGoods } from "@/api/mall/goods";
 import { treeListCategory } from "@/api/mall/category";
+import { getRecommendList } from "@/api/mall/recommend";
 
 export default {
   name: "MallHome",
@@ -149,6 +185,8 @@ export default {
       loading: false,
       // 商品列表
       goodsList: [],
+      // 推荐商品列表
+      recommendList: [],
       // 分类列表（树形结构）
       categoryList: [],
       // 所有分类（扁平化，用于查找分类名）
@@ -178,8 +216,17 @@ export default {
   created() {
     this.getCategoryList();
     this.getGoodsList();
+    this.getRecommendGoodsList();
   },
   methods: {
+    /** 获取推荐商品列表（猜你喜欢） */
+    getRecommendGoodsList() {
+      getRecommendList(8).then(response => {
+        this.recommendList = response.data || [];
+      }).catch(() => {
+        this.recommendList = [];
+      });
+    },
     /** 获取分类列表（树形结构） */
     getCategoryList() {
       treeListCategory().then(response => {
@@ -359,6 +406,141 @@ export default {
       font-weight: 600;
       border-bottom-color: #ff6b9d;
       background: linear-gradient(to bottom, #fff5f8, #fff);
+    }
+  }
+}
+
+/* 猜你喜欢区域 */
+.recommend-section {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 30px 20px 0;
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #ffeef5;
+  }
+
+  .section-title {
+    font-size: 22px;
+    font-weight: 600;
+    color: #333;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    i {
+      color: #ff6b9d;
+      font-size: 24px;
+    }
+  }
+
+  .recommend-tip {
+    font-size: 13px;
+    color: #999;
+  }
+}
+
+.recommend-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+
+  @media (max-width: 1200px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  @media (max-width: 900px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (max-width: 500px) {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+}
+
+.recommend-card {
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: none;
+  background: linear-gradient(135deg, #fff9f0 0%, #fff5f5 100%);
+
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(255, 107, 157, 0.2);
+
+    .recommend-image img {
+      transform: scale(1.05);
+    }
+  }
+
+  .recommend-image {
+    position: relative;
+    padding-top: 100%;
+    overflow: hidden;
+
+    img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.5s ease;
+    }
+
+    .recommend-tag {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: linear-gradient(135deg, #ff6b9d, #ff8a65);
+      color: #fff;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+
+      i {
+        font-size: 12px;
+      }
+    }
+  }
+
+  .recommend-info {
+    padding: 12px;
+
+    .recommend-name {
+      font-size: 14px;
+      font-weight: 500;
+      color: #333;
+      margin: 0 0 8px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .recommend-price {
+      color: #ff4757;
+      font-weight: 700;
+
+      .symbol {
+        font-size: 12px;
+      }
+
+      .value {
+        font-size: 18px;
+      }
     }
   }
 }

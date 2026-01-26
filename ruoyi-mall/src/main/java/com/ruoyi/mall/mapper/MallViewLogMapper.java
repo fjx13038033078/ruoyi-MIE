@@ -99,4 +99,12 @@ public interface MallViewLogMapper
      * @return 浏览次数
      */
     public int selectViewCountByGoodsId(Long goodsId);
+
+    /**
+     * 查询所有浏览记录（用于协同过滤）
+     * 返回 Map 列表，包含 userId 和 goodsId
+     * 
+     * @return 浏览记录列表
+     */
+    public List<java.util.Map<String, Object>> selectAllViewLogsForCF();
 }
