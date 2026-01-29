@@ -106,6 +106,12 @@ export const constantRoutes = [
         component: () => import('@/views/mall/home/detail'),
         name: 'GoodsDetail',
         meta: { title: '商品详情' }
+      },
+      {
+        path: 'orders',
+        component: () => import('@/views/mall/home/orders'),
+        name: 'MyOrders',
+        meta: { title: '我的订单' }
       }
     ]
   }

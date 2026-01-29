@@ -59,6 +59,14 @@ public class MallOrder
     /** 用户名（非数据库字段，用于展示） */
     private String userName;
 
+    // ========== 商品信息（非数据库字段，用于展示） ==========
+
+    /** 商品名称 */
+    private String goodsName;
+
+    /** 商品封面图 */
+    private String goodsCover;
+
     // ========== 下单时的额外参数 ==========
     
     /** 商品ID（下单参数） */

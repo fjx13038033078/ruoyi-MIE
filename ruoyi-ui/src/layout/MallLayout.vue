@@ -15,6 +15,9 @@
               <i class="el-icon-arrow-down"></i>
             </div>
             <el-dropdown-menu slot="dropdown">
+              <el-dropdown-item @click.native="goOrders">
+                <i class="el-icon-s-order"></i> 我的订单
+              </el-dropdown-item>
               <el-dropdown-item @click.native="goProfile">
                 <i class="el-icon-user"></i> 个人中心
               </el-dropdown-item>
@@ -44,6 +47,9 @@ export default {
   methods: {
     goHome() {
       this.$router.push('/mall/home')
+    },
+    goOrders() {
+      this.$router.push('/mall/orders')
     },
     goProfile() {
       this.$router.push('/user/profile')

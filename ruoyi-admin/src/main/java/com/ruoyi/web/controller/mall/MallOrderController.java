@@ -111,11 +111,12 @@ public class MallOrderController extends BaseController
      * 查询当前用户的订单列表
      */
     @GetMapping("/my")
-    public TableDataInfo myOrders()
+    public TableDataInfo myOrders(MallOrder mallOrder)
     {
         startPage();
-        Long userId = SecurityUtils.getUserId();
-        List<MallOrder> list = mallOrderService.selectMallOrderByUserId(userId);
+        // 只查询当前用户的订单
+        mallOrder.setUserId(SecurityUtils.getUserId());
+        List<MallOrder> list = mallOrderService.selectMallOrderList(mallOrder);
         return getDataTable(list);
     }
 
